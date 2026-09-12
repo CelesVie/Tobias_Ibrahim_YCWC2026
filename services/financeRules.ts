@@ -1,6 +1,6 @@
 // Pemetaan Kategori & Aturan Financial Intelligence Engine
 
-const CATEGORIES = {
+export const CATEGORIES = {
   NEEDS: [
     'Makanan Utama',
     'Tagihan/Utilitas',
@@ -28,20 +28,35 @@ const CATEGORIES = {
 /**
  * Mengidentifikasi grup kategori: 'NEEDS', 'WANTS', atau 'INCOME'
  */
-function getCategoryGroup(category, type = 'EXPENSE') {
+export function getCategoryGroup(category: string, type: string = 'EXPENSE') {
   if (type === 'INCOME') return 'INCOME';
   if (CATEGORIES.NEEDS.includes(category)) return 'NEEDS';
   if (CATEGORIES.WANTS.includes(category)) return 'WANTS';
   return 'OTHER';
 }
 
+interface WantsItem {
+  category: string;
+  total: number;
+  [key: string]: unknown;
+}
+
+interface HealthInput {
+  totalIncome: number;
+  totalExpense: number;
+  netBalance: number;
+  needsExpense: number;
+  wantsExpense: number;
+  wantsBreakdown?: WantsItem[];
+}
+
 /**
  * Evaluasi aturan finansial (Savings Target 20% & Wants Warning > 30%)
  */
-function evaluateFinancialHealth({ totalIncome, totalExpense, netBalance, needsExpense, wantsExpense, wantsBreakdown = [] }) {
+export function evaluateFinancialHealth({ totalIncome, totalExpense, netBalance, needsExpense, wantsExpense, wantsBreakdown = [] }: HealthInput) {
   // Target tabungan ideal: 20% dari total pemasukan
   const idealSavingsTarget = Math.round(totalIncome * 0.20);
-  
+
   // Defisit tabungan jika saldo saat ini di bawah target ideal
   const isSavingsDeficit = netBalance < idealSavingsTarget;
   const savingsDeficit = isSavingsDeficit ? (idealSavingsTarget - netBalance) : 0;
@@ -49,7 +64,7 @@ function evaluateFinancialHealth({ totalIncome, totalExpense, netBalance, needsE
   // Rasio Wants terhadap total pengeluaran
   const wantsRatio = totalExpense > 0 ? Number(((wantsExpense / totalExpense) * 100).toFixed(1)) : 0;
   const needsRatio = totalExpense > 0 ? Number(((needsExpense / totalExpense) * 100).toFixed(1)) : 0;
-  
+
   // Peringatan pengeluaran impulsif jika Wants > 30% dari total pengeluaran
   const isWantsWarning = wantsRatio > 30;
 
@@ -62,7 +77,7 @@ function evaluateFinancialHealth({ totalIncome, totalExpense, netBalance, needsE
     warningMessage = `PERINGATAN IMPULSIF: Rasio pengeluaran sekunder (Wants) Anda mencapai ${wantsRatio}% dari total pengeluaran (Batas wajar ideal adalah maksimal 30%).`;
   }
 
-  let savingsRecommendation = null;
+  let savingsRecommendation;
   if (isSavingsDeficit) {
     savingsRecommendation = {
       status: 'DEFICIT',
@@ -93,9 +108,3 @@ function evaluateFinancialHealth({ totalIncome, totalExpense, netBalance, needsE
     savingsRecommendation
   };
 }
-
-module.exports = {
-  CATEGORIES,
-  getCategoryGroup,
-  evaluateFinancialHealth
-};

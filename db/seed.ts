@@ -1,6 +1,8 @@
-const { db } = require('./database');
+import { sql } from "drizzle-orm";
+import { db } from "./index.js";
+import { transactions } from "./schema.js";
 
-const seedTransactions = [
+export const seedTransactions = [
   {
     type: 'INCOME',
     amount: 10000000,
@@ -66,31 +68,23 @@ const seedTransactions = [
   }
 ];
 
-function seedDatabase(force = false) {
-  const countRow = db.prepare('SELECT COUNT(*) as count FROM transactions').get();
-  if (countRow.count > 0 && !force) {
-    console.log(`[Seed] Database sudah berisi ${countRow.count} transaksi. Melewati proses seed.`);
+export async function seedDatabase(force = false) {
+  const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(transactions);
+
+  if (count > 0 && !force) {
     return;
   }
 
   if (force) {
-    db.exec('DELETE FROM transactions');
-    db.exec("DELETE FROM sqlite_sequence WHERE name='transactions'");
+    await db.delete(transactions);
   }
 
-  const insert = db.prepare(`
-    INSERT INTO transactions (type, amount, category, description, date)
-    VALUES (?, ?, ?, ?, ?)
-  `);
-
-  for (const item of seedTransactions) {
-    insert.run(item.type, item.amount, item.category, item.description, item.date);
-  }
-
-  console.log(`[Seed] Sukses memasukkan ${seedTransactions.length} transaksi awal dummy.`);
+  await db.insert(transactions).values(seedTransactions);
 }
 
-module.exports = {
-  seedDatabase,
-  seedTransactions
-};
+export async function ensureSeeded() {
+  if (process.env.SKIP_SEED === 'true') {
+    return;
+  }
+  await seedDatabase(false);
+}
