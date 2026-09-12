@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Budget Manager - Smart Personal Finance & AI Advisor</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="brand-wrapper">
+          <div class="logo">
+            <span class="logo-icon">💰</span>
+            <span class="logo-text">Budget Manager</span>
+          </div>
+          <span class="badge-agentic">Agentic AI Advisor</span>
+        </div>
+        <div class="header-actions">
+          <button id="btn-reset-seed" class="btn-ghost" title="Reset ke data dummy awal">
+            <span class="btn-icon">🔄</span> Reset Seed Data
+          </button>
+          <div class="status-indicator">
+            <span class="status-dot online"></span>
+            <span id="ai-status-text">Engine Ready</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="container">
+        
+        <!-- Section: Impulsive Spending Alert Banner (Dynamic) -->
+        <div id="wants-warning-banner" class="alert-banner warning hidden">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <strong id="alert-title">Peringatan Pengeluaran Impulsif!</strong>
+            <p id="alert-message">Rasio pengeluaran kategori Wants Anda melebihi batas aman 30% dari total pengeluaran.</p>
+          </div>
+          <button id="btn-ask-ai-warning" class="btn-alert-action">Tanya AI Solusinya →</button>
+        </div>
+
+        <!-- Section: Metric Summary Widgets -->
+        <section class="metrics-grid">
+          <!-- Card 1: Total Saldo -->
+          <div class="metric-card balance-card">
+            <div class="metric-header">
+              <span class="metric-label">Total Saldo Bersih</span>
+              <span class="metric-icon">💳</span>
+            </div>
+            <div class="metric-value" id="val-balance">Rp 0</div>
+            <div class="metric-footer" id="val-balance-sub">Menghitung kalkulasi riil...</div>
+          </div>
+
+          <!-- Card 2: Total Pemasukan -->
+          <div class="metric-card income-card">
+            <div class="metric-header">
+              <span class="metric-label">Total Pemasukan</span>
+              <span class="metric-icon">📈</span>
+            </div>
+            <div class="metric-value text-income" id="val-income">Rp 0</div>
+            <div class="metric-footer" id="val-income-sub">0 transaksi pemasukan</div>
+          </div>
+
+          <!-- Card 3: Total Pengeluaran -->
+          <div class="metric-card expense-card">
+            <div class="metric-header">
+              <span class="metric-label">Total Pengeluaran</span>
+              <span class="metric-icon">📉</span>
+            </div>
+            <div class="metric-value text-expense" id="val-expense">Rp 0</div>
+            <div class="metric-footer" id="val-expense-sub">
+              <span>Needs: <b id="val-needs-sub">Rp 0</b></span> | 
+              <span>Wants: <b id="val-wants-sub">Rp 0</b></span>
+            </div>
+          </div>
+
+          <!-- Card 4: Rasio Wants & Tabungan 20% -->
+          <div class="metric-card ratio-card">
+            <div class="metric-header">
+              <span class="metric-label">Rasio Wants & Target Tabungan</span>
+              <span class="metric-icon">🎯</span>
+            </div>
+            <div class="ratio-progress-wrapper">
+              <div class="ratio-label-row">
+                <span>Rasio Wants: <b id="val-wants-ratio">0%</b></span>
+                <span class="ratio-target-rule">Maks 30%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="wants-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+                <div class="progress-bar-threshold" title="Batas maks 30%"></div>
+              </div>
+            </div>
+            <div class="metric-footer" id="val-savings-sub">
+              Target 20%: <b id="val-savings-target">Rp 0</b>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: 2 Columns (Left: Ledger & Form | Right: Agentic Chatbot) -->
+        <div class="workspace-grid">
+          
+          <!-- Left Column: Manual Finance Engine & Ledger -->
+          <section class="ledger-column">
+            
+            <!-- Card: Form Input Transaksi -->
+            <div class="panel-card form-panel">
+              <div class="panel-header">
+                <h2 class="panel-title"><span class="title-icon">✏️</span> Catat Transaksi Baru</h2>
+                <span class="panel-hint">Manual Finance Engine</span>
+              </div>
+              
+              <form id="transaction-form" class="transaction-form">
+                <!-- Transaction Type Toggle -->
+                <div class="form-group">
+                  <label class="form-label">Tipe Transaksi</label>
+                  <div class="type-toggle-group">
+                    <button type="button" class="btn-toggle active" data-type="EXPENSE" id="btn-type-expense">
+                      <span>📉</span> Pengeluaran (Expense)
+                    </button>
+                    <button type="button" class="btn-toggle" data-type="INCOME" id="btn-type-income">
+                      <span>📈</span> Pemasukan (Income)
+                    </button>
+                  </div>
+                  <input type="hidden" name="type" id="input-type" value="EXPENSE" />
+                </div>
+
+                <div class="form-row">
+                  <!-- Nominal -->
+                  <div class="form-group flex-1">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                      <label for="input-amount" class="form-label">Nominal (Rp) *</label>
+                      <span id="amount-hint" style="font-size: 11px; color: var(--text-muted); font-weight: 500;"></span>
+                    </div>
+                    <div class="input-prefix-wrapper">
+                      <span class="input-prefix">Rp</span>
+                      <input
+                        type="number"
+                        id="input-amount"
+                        name="amount"
+                        placeholder="Contoh: 50000"
+                        min="1"
+                        step="any"
+                        required
+                        class="form-control"
+                      />
+                    </div>
+                    <span id="amount-error-msg" style="display: none; font-size: 12px; color: var(--color-expense); margin-top: 2px;"></span>
+                  </div>
+
+                  <!-- Tanggal -->
+                  <div class="form-group flex-1">
+                    <label for="input-date" class="form-label">Tanggal *</label>
+                    <input type="date" id="input-date" name="date" required class="form-control" />
+                  </div>
+                </div>
+
+                <!-- Kategori -->
+                <div class="form-group">
+                  <label for="input-category" class="form-label">Kategori *</label>
+                  <select id="input-category" name="category" required class="form-control">
+                    <!-- Dinamis terisi via JavaScript berdasarkan tipe -->
+                  </select>
+                </div>
+
+                <!-- Catatan / Deskripsi -->
+                <div class="form-group">
+                  <label for="input-description" class="form-label">Deskripsi / Catatan (Opsional)</label>
+                  <input
+                    type="text"
+                    id="input-description"
+                    name="description"
+                    placeholder="Contoh: Makan siang nasi padang bersama tim"
+                    class="form-control"
+                  />
+                </div>
+
+                <button type="submit" id="btn-submit-tx" class="btn-primary">
+                  <span class="btn-icon">💾</span> Simpan Transaksi
+                </button>
+              </form>
+            </div>
+
+            <!-- Card: Riwayat Transaksi -->
+            <div class="panel-card table-panel">
+              <div class="panel-header">
+                <div class="panel-title-group">
+                  <h2 class="panel-title"><span class="title-icon">📜</span> Riwayat Transaksi</h2>
+                  <span class="count-pill" id="tx-count-pill">0 Transaksi</span>
+                </div>
+
+                <!-- Filter Tipe -->
+                <div class="filter-tabs">
+                  <button class="filter-tab active" data-filter="ALL">Semua</button>
+                  <button class="filter-tab" data-filter="EXPENSE">Pengeluaran</button>
+                  <button class="filter-tab" data-filter="INCOME">Pemasukan</button>
+                </div>
+              </div>
+
+              <!-- Tabel Transaksi -->
+              <div class="table-container">
+                <table class="transaction-table" id="transaction-table">
+                  <thead>
+                    <tr>
+                      <th>Tanggal</th>
+                      <th>Kategori & Grup</th>
+                      <th>Keterangan</th>
+                      <th class="text-right">Nominal</th>
+                      <th class="text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tx-table-body">
+                    <!-- Baris transaksi akan dirender via script.js -->
+                  </tbody>
+                </table>
+                <div id="tx-empty-state" class="empty-state hidden">
+                  <span class="empty-icon">📂</span>
+                  <p>Belum ada data transaksi yang dicatat.</p>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- Right Column: AI Agentic Advisor Chatbot -->
+          <section class="chatbot-column">
+            <div class="panel-card chat-panel">
+              
+              <!-- Chat Header -->
+              <div class="chat-header">
+                <div class="advisor-info">
+                  <div class="advisor-avatar">🤖</div>
+                  <div>
+                    <h3 class="advisor-name">FinAdvisor AI</h3>
+                    <p class="advisor-tagline">Agentic Personal Financial Advisor</p>
+                  </div>
+                </div>
+                <div class="chat-badge-tool" title="AI wajib memanggil get_financial_summary() dari backend riil">
+                  <span class="tool-dot"></span> Function Calling Active
+                </div>
+              </div>
+
+              <!-- Quick Action Suggestion Chips -->
+              <div class="quick-prompts-bar">
+                <span class="quick-prompts-title">Saran Pertanyaan:</span>
+                <div class="quick-prompts-list">
+                  <button class="chip-prompt" data-prompt="Bagaimana ringkasan dan evaluasi kondisi keuangan saya saat ini?">
+                    📊 Ringkasan Finansial
+                  </button>
+                  <button class="chip-prompt" data-prompt="Apakah ada pengeluaran impulsif atau boros pada kategori Wants?">
+                    ⚠️ Cek Pengeluaran Impulsif
+                  </button>
+                  <button class="chip-prompt" data-prompt="Apakah saldo saya mencukupi target tabungan 20%? Beri rekomendasi penghematan.">
+                    💡 Target Tabungan 20%
+                  </button>
+                </div>
+              </div>
+
+              <!-- Chat Message History Container -->
+              <div class="chat-messages" id="chat-messages">
+                <!-- Welcome Message -->
+                <div class="chat-bubble ai-bubble">
+                  <div class="bubble-header">
+                    <span class="bubble-author">FinAdvisor AI</span>
+                    <span class="bubble-time">Sistem</span>
+                  </div>
+                  <div class="bubble-body markdown-body">
+                    <p>Halo! Saya adalah <strong>FinAdvisor AI</strong>, Penasihat Keuangan Pribadi Anda.</p>
+                    <p>Saya terintegrasi langsung dengan <em>Financial Intelligence Engine</em> backend melalui <strong>Function Calling</strong>. Saya selalu membaca angka kalkulasi riil dari data pencatatan Anda untuk menjamin akurasi 100%.</p>
+                    <p>Silakan tanyakan kondisi keuangan, evaluasi pos pengeluaran impulsif (Wants &gt; 30%), atau strategi mencapai target tabungan 20%!</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Function Calling Execution Indicator -->
+              <div id="function-call-indicator" class="tool-call-banner hidden">
+                <span class="spinner-small"></span>
+                <span>FinAdvisor AI sedang memproses...</span>
+              </div>
+
+              <!-- Chat Input Form -->
+              <form id="chat-form" class="chat-input-form">
+                <input
+                  type="text"
+                  id="chat-input"
+                  placeholder="Ketik pertanyaan untuk FinAdvisor AI..."
+                  autocomplete="off"
+                  required
+                />
+                <button type="submit" id="btn-send-chat" class="btn-send" title="Kirim Pesan">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </form>
+
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>© 2026 Smart Personal Finance • Didukung oleh Google Gemini Agentic Function Calling & Node.js SQLite</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
