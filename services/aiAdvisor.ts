@@ -1,5 +1,5 @@
-const { GoogleGenAI, Type } = require('@google/genai');
-const financeEngine = require('./financeEngine');
+import { GoogleGenAI, Type } from '@google/genai';
+import * as financeEngine from './financeEngine.js';
 
 const SYSTEM_PROMPT = `Anda adalah "FinAdvisor AI", seorang Penasihat Keuangan Pribadi (Agentic Financial Advisor) yang ramah, profesional, objektif, ringkas, dan sangat presisi dalam angka.
 
@@ -34,7 +34,7 @@ const getFinancialSummaryDeclaration = {
 /**
  * Format angka rupiah untuk tampilan
  */
-function formatRupiah(num) {
+function formatRupiah(num: number) {
   return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
 }
 
@@ -42,7 +42,7 @@ function formatRupiah(num) {
  * Fallback AI Advisor cerdas jika GEMINI_API_KEY belum disetel
  * Mensimulasikan agentic LLM function calling secara presisi
  */
-function generateFallbackAdvisorResponse(message, summary) {
+export function generateFallbackAdvisorResponse(message: string, summary: Awaited<ReturnType<typeof financeEngine.getFinancialSummary>>) {
   const {
     totalIncome,
     totalExpense,
@@ -111,16 +111,21 @@ ${wantsBreakdown && wantsBreakdown.length > 0 ? `### 🎯 Rincian Pos Pengeluara
 *Catatan: FinAdvisor AI menggunakan Function Calling backend untuk memastikan seluruh angka 100% akurat sesuai data pencatatan Anda.*`;
 }
 
+interface ChatHistoryItem {
+  role: string;
+  content: string;
+}
+
 /**
  * Handle chat interaktif dengan agentic function calling
  */
-async function processChatMessage({ message, history = [] }) {
+export async function processChatMessage({ message, history = [] as ChatHistoryItem[] }) {
   const apiKey = process.env.GEMINI_API_KEY;
   const modelName = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
   // Jika tidak ada API key atau API key masih default dummy, gunakan agentic simulation
   if (!apiKey || apiKey.trim() === '' || apiKey === 'your_gemini_api_key_here') {
-    const summary = financeEngine.getFinancialSummary();
+    const summary = await financeEngine.getFinancialSummary();
     const reply = generateFallbackAdvisorResponse(message, summary);
     return {
       reply,
@@ -171,7 +176,7 @@ async function processChatMessage({ message, history = [] }) {
       const call = response.functionCalls[0];
       if (call.name === 'get_financial_summary') {
         toolCalled = true;
-        summaryData = financeEngine.getFinancialSummary();
+        summaryData = await financeEngine.getFinancialSummary();
 
         // Putaran kedua: kembalikan hasil data fungsi ke model
         // PENTING: pakai content asli dari response (bukan rekonstruksi manual),
@@ -219,10 +224,10 @@ async function processChatMessage({ message, history = [] }) {
       source: 'gemini_api'
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AI Advisor Error]:', error);
     // Fallback ke agentic calculation internal jika terjadi error koneksi ke Google API
-    const summary = financeEngine.getFinancialSummary();
+    const summary = await financeEngine.getFinancialSummary();
     const reply = generateFallbackAdvisorResponse(message, summary);
     return {
       reply: `*(Catatan: Menggunakan mode penasihat internal karena koneksi API: ${error.message})*\n\n` + reply,
@@ -234,8 +239,4 @@ async function processChatMessage({ message, history = [] }) {
   }
 }
 
-module.exports = {
-  processChatMessage,
-  generateFallbackAdvisorResponse,
-  SYSTEM_PROMPT
-};
+export { SYSTEM_PROMPT };
