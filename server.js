@@ -33,13 +33,17 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'main.html'));
 });
 
-// Jalankan server
-app.listen(PORT, () => {
-  console.log('====================================================');
-  console.log(`🚀 Smart Personal Finance Server is running!`);
-  console.log(`🌐 URL: http://localhost:${PORT}`);
-  console.log(`📁 Static Files: ${__dirname}`);
-  console.log(`🤖 AI Model: ${process.env.GEMINI_MODEL || 'gemini-3.6-flash'}`);
-  console.log(`🔑 Gemini API Key: ${process.env.GEMINI_API_KEY ? 'Terpasang ✅' : 'Mode Simulasi Internal (Tambahkan key di .env) ℹ️'}`);
-  console.log('====================================================');
-});
+// Vercel membutuhkan Express app sebagai handler; server lokal tetap memakai listen.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log('====================================================');
+    console.log(`🚀 Smart Personal Finance Server is running!`);
+    console.log(`🌐 URL: http://localhost:${PORT}`);
+    console.log(`📁 Static Files: ${__dirname}`);
+    console.log(`🤖 AI Model: ${process.env.GEMINI_MODEL || 'gemini-3.6-flash'}`);
+    console.log(`🔑 Gemini API Key: ${process.env.GEMINI_API_KEY ? 'Terpasang ✅' : 'Mode Simulasi Internal (Tambahkan key di .env) ℹ️'}`);
+    console.log('====================================================');
+  });
+}
+
+module.exports = app;

@@ -1,8 +1,14 @@
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
-const dbPath = path.join(__dirname, '..', 'transactions.db');
+// Vercel hanya menyediakan filesystem yang dapat ditulis secara sementara di /tmp.
+const dbPath = process.env.DATABASE_PATH || (
+  process.env.VERCEL
+    ? path.join(os.tmpdir(), 'transactions.db')
+    : path.join(__dirname, '..', 'transactions.db')
+);
 const isNewDb = !fs.existsSync(dbPath);
 
 const db = new DatabaseSync(dbPath);
